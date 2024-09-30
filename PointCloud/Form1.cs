@@ -60,6 +60,7 @@ namespace PointCloud
 
             // 读取点云文件并获取 vtkPoints
             vtkPoints points = ReadPointCloudFromFile(selectedFilePath);
+            MessageBox.Show("读取了 " + points.GetNumberOfPoints() + " 个点。");
 
             // 创建PolyData
             vtkPolyData polydata = vtkPolyData.New();
@@ -90,23 +91,23 @@ namespace PointCloud
             vtkPoints points = vtkPoints.New();
             try
             {
-                // 读取文件中的每行数据
+                // 读取文件中的所有行
                 var lines = System.IO.File.ReadAllLines(selectedFilePath);
-                foreach (var line in lines)
+
+                // 跳过头部信息，直到找到 "DATA" 部分
+                int i = 0;
+                while (i < lines.Length && !lines[i].Trim().StartsWith("DATA"))
                 {
-                    // 使用空格分割每行数据
-                    string[] parts = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 3) // 确保有足够的数据代表一个点
+                    i++;
+                }
+
+                // 读取数据部分
+                for (; i < lines.Length; i++)
+                {
+                    string[] parts = lines[i].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length == 3) // 确保有足够的数据代表一个点
                     {
                         // 解析点的坐标
-                        //double x = double.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture);
-                        //double y = double.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture);
-                        //double z = double.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture);
-
-
-                        // 将点添加到vtkPoints对象
-                        //points.InsertNextPoint(x, y, z);
-
                         double x, y, z;
                         if (double.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out x) &&
                             double.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out y) &&
@@ -115,17 +116,12 @@ namespace PointCloud
                             // 将点添加到vtkPoints对象
                             points.InsertNextPoint(x, y, z);
                         }
-                        else
-                        {
-                            // 处理无法解析为浮点数的情况
-                            Console.WriteLine($"无法解析点：{line}");
-                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("读点云文件发生错误: " + ex.Message);
+                MessageBox.Show("Error reading point cloud file: " + ex.Message);
             }
             return points;
         }
